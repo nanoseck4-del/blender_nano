@@ -1782,6 +1782,20 @@ bool panel_category_is_visible_by_tags(const bContext *C,
     return true;
   }
 
+  /* Category temporarily promoted by the quick-focus search: a category picked from
+   * another tag block stays visible in the current tab bar until the user selects another
+   * tab or changes the tag filter. */
+  {
+    TagFilterStateRef temp_state{};
+    if (tag_filter_state_from_area(area, &temp_state) &&
+        temp_state.quick_focus_temp_category &&
+        temp_state.quick_focus_temp_category[0] != '\0' &&
+        STREQ(temp_state.quick_focus_temp_category, category))
+    {
+      return true;
+    }
+  }
+
   /* Tag filtering - check horizontal tag bar filter */
   if (!category_passes_tag_filter(C, category)) {
     return false;
