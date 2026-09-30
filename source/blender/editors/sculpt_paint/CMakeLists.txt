@@ -58,7 +58,18 @@ set(SRC
   paint_gradient_core.cc
   paint_gradient_curve.cc
   paint_ops.cc
+  paint_bezier_input.cc
+  paint_shape_blend.cc
+  paint_shape_edit.cc
+  paint_shape_geom.cc
+  paint_shape_raster.cc
+  paint_shape_shade.cc
+  paint_shape_space.cc
+  paint_shape_uv_trace.cc
   paint_texture_ops.cc
+  paint_vector_document.cc
+  paint_vector_editor.cc
+  paint_vector_serialize.cc
   paint_sample_color.cc
   paint_stroke.cc
   paint_stroke_roll.cc
@@ -204,7 +215,7 @@ set(SRC
   paint_curve_patch_profile.hh
   paint_curve_patch_sampler.hh
   paint_curve_patch_session.hh
-paint_intern.hh
+  paint_intern.hh
   paint_gradient_core.hh
   paint_gradient_curve.hh
   paint_image_curve_patch.hh
@@ -212,6 +223,19 @@ paint_intern.hh
   paint_image_stroke_hook.hh
   paint_image_curve_patch_raster.hh
   paint_image_curve_patch_edit.hh
+
+  paint_bezier_input.hh
+  paint_shape.hh
+  paint_shape_blend.hh
+  paint_shape_edit.hh
+  paint_shape_raster.hh
+  paint_shape_shade.hh
+  paint_shape_space.hh
+  paint_shape_uv_trace.hh
+  paint_shape_target.hh
+  paint_vector_document.hh
+  paint_vector_editor.hh
+  paint_vector_serialize.hh
 
   curves/sculpt_intern.hh
   curves/sculpt_multi_object.hh
@@ -323,6 +347,11 @@ if(WITH_GTESTS)
     paint_gradient_curve_test.cc
     mesh/paint_test.cc
     mesh/paint_image_select_warp_tests.cc
+    paint_shape_raster_test.cc
+    paint_shape_uv_trace_test.cc
+    paint_shape_edit_test.cc
+    paint_vector_editor_test.cc
+    paint_vector_serialize_test.cc
     mesh/paint_image_uv_geom_tests.cc
     mesh/paint_image_uv_symmetry_tests.cc
     mesh/sculpt_boundary_tests.cc
@@ -334,6 +363,8 @@ if(WITH_GTESTS)
     mesh/sculpt_undo_test.cc
     paint_curve_geometry_test.cc
     paint_curve_patch_sampler_test.cc
+    paint_shape_shade_test.cc
+    paint_shape_blend_test.cc
     paint_image_curve_patch_raster_test.cc
     paint_curve_patch_session_test.cc
     roll_spline_test.cc
