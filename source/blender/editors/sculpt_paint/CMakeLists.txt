@@ -71,6 +71,7 @@ set(SRC
   paint_vector_editor.cc
   paint_vector_serialize.cc
   paint_sample_color.cc
+  paint_session_confirm.cc
   paint_stroke.cc
   paint_stroke_roll.cc
   paint_utils.cc
@@ -233,6 +234,7 @@ set(SRC
   paint_shape_space.hh
   paint_shape_uv_trace.hh
   paint_shape_target.hh
+  paint_session_confirm.hh
   paint_vector_document.hh
   paint_vector_editor.hh
   paint_vector_serialize.hh
