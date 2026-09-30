@@ -1101,6 +1101,9 @@ void PAINT_OT_shape_colors_swap(wmOperatorType *ot);
 /* paint_image_shape_vector.cc */
 void PAINT_OT_image_shape_vector_apply(wmOperatorType *ot);
 void PAINT_OT_image_shape_vector_cancel(wmOperatorType *ot);
+/** Steps the session-local undo of the shape session in the Image Editor, including a linked 3D
+ * Sculpt session; keeps Ctrl+Z on the shape instead of the global stack. */
+void PAINT_OT_image_shape_vector_undo(wmOperatorType *ot);
 void PAINT_OT_image_shape_transform_toggle(wmOperatorType *ot);
 void PAINT_OT_vector_save(wmOperatorType *ot);
 void PAINT_OT_vector_edit(wmOperatorType *ot);

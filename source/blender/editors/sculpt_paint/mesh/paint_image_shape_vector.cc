@@ -79,6 +79,7 @@
 
 #include "paint_image_select_intern.hh"
 #include "paint_image_shape_composite.hh"
+#include "paint_shape_vector_3d.hh"
 #include "../paint_shape_commit_job.hh"
 #include "../paint_shape_draw.hh"
 #include "../paint_shape_raster.hh"
@@ -893,7 +894,8 @@ static bool image_shape_vector_apply_poll(bContext *C)
   if (shape::image_shape_vector_state_get(CTX_wm_space_image(C)) != nullptr) {
     return true;
   }
-  return false;
+  /* A live 3D Sculpt shape session shown by this Image Editor: Enter applies it. */
+  return ED_image_paint_shape3d_session_linked(C);
 }
 
 static wmOperatorStatus image_shape_vector_apply_exec(bContext *C, wmOperator * /*op*/)
@@ -901,7 +903,7 @@ static wmOperatorStatus image_shape_vector_apply_exec(bContext *C, wmOperator * 
   if (shape::image_shape_vector_state_get(CTX_wm_space_image(C)) != nullptr) {
     return shape::image_shape_vector_session_apply(C);
   }
-  return OPERATOR_CANCELLED;
+  return ED_image_paint_shape3d_session_apply(C) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
 }
 
 static wmOperatorStatus image_shape_vector_cancel_exec(bContext *C, wmOperator * /*op*/)
@@ -911,7 +913,7 @@ static wmOperatorStatus image_shape_vector_cancel_exec(bContext *C, wmOperator *
     shape::image_shape_vector_session_cancel(C, sima);
     return OPERATOR_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return ED_image_paint_shape3d_session_cancel(C) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
 }
 
 void PAINT_OT_image_shape_vector_apply(wmOperatorType *ot)
@@ -946,6 +948,51 @@ void PAINT_OT_image_shape_vector_cancel(wmOperatorType *ot)
 }
 
 /* -------------------------------------------------------------------- */
+/** \name Session undo
+ * \{ */
+
+static bool image_shape_vector_undo_poll(bContext *C)
+{
+  /* Only the linked 3D Sculpt session: an Image Vector session is owned by its own modal, whose
+   * Ctrl+Z handling already steps the stack (and passes an empty stack through to global undo). */
+  return ED_image_paint_shape3d_session_linked(C);
+}
+
+/** Steps the linked 3D session's undo stack. The 3D session has no modal in this editor, so this
+ * routes Ctrl+Z to the shape instead of the global stack (which would cancel the session). An
+ * empty stack cancels the session, exactly like the 3D modal's own Ctrl+Z handling. */
+static wmOperatorStatus image_shape_vector_undo_exec(bContext *C, wmOperator * /*op*/)
+{
+  Object *ob = CTX_data_active_object(C);
+  shape::PaintShapeSession *session = ob != nullptr ? shape::paint_shape_session_get(*ob) :
+                                                      nullptr;
+  if (session == nullptr) {
+    return OPERATOR_CANCELLED;
+  }
+  std::unique_ptr<shape::VectorEditHost> host = shape::paint_shape_session_host_create(
+      *C, *session, 0.0f);
+  shape::ShapeVectorEditor editor;
+  if (editor.undo(C, *host)) {
+    return OPERATOR_FINISHED;
+  }
+  shape::paint_shape_session_cancel(C, *ob);
+  return OPERATOR_CANCELLED;
+}
+
+void PAINT_OT_image_shape_vector_undo(wmOperatorType *ot)
+{
+  ot->name = "Undo Shape Edit";
+  ot->idname = "PAINT_OT_image_shape_vector_undo";
+  ot->description = "Step the shape session's own undo, keeping Ctrl+Z off the global stack";
+  ot->exec = image_shape_vector_undo_exec;
+  ot->poll = image_shape_vector_undo_poll;
+  /* No undo step of its own: it steps the session's in-memory history. */
+  ot->flag = 0;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
 /** \name Transform-mode toggle
  * \{ */
 
@@ -959,7 +1006,8 @@ static bool image_shape_transform_toggle_poll(bContext *C)
   if (shape::image_shape_vector_state_get(CTX_wm_space_image(C)) != nullptr) {
     return true;
   }
-  return false;
+  /* A linked 3D Sculpt session: the button toggles its cage. */
+  return ED_image_paint_shape3d_session_linked(C);
 }
 
 static wmOperatorStatus image_shape_transform_toggle_exec(bContext *C, wmOperator * /*op*/)
@@ -969,7 +1017,14 @@ static wmOperatorStatus image_shape_transform_toggle_exec(bContext *C, wmOperato
     shape::image_shape_vector_transform_mode_toggle(sima);
   }
   else {
-    return OPERATOR_CANCELLED;
+    Object *ob = CTX_data_active_object(C);
+    if (ob == nullptr || !ED_image_paint_shape3d_session_linked(C)) {
+      return OPERATOR_CANCELLED;
+    }
+    /* Same toggle the 3D Viewport's button runs; notify so the cage updates there and in every
+     * linked Image Editor, not just in this region. */
+    shape::paint_shape_session_transform_toggle(*ob);
+    WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
   }
   if (ARegion *region = CTX_wm_region(C)) {
     ED_region_tag_redraw(region);

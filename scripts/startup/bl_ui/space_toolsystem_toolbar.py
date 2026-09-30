@@ -2902,6 +2902,111 @@ for _shape_tool_name, _shape_tool in _paint_shape_tools(
 del _shape_tool_name, _shape_tool
 
 
+class _defs_sculpt_paint_shape:
+    # Sculpt Mode (PBR Paint) frontend of the shape tools; the settings are shared with the Image
+    # Editor tools (`tool_settings.image_paint.shape`).
+
+    @staticmethod
+    def draw_shape_settings(context, layout, tool):
+        # A live Sculpt Vector session owns a private settings copy; the UI edits that copy.
+        from bl_ui.properties_paint_common import paint_shape_settings
+        shape = paint_shape_settings(context)
+        settings = context.tool_settings.sculpt
+        # Projection (View / Surface) is a per-tool operator property of Pixel mode, applied to the
+        # draw operator on invocation; Vector is always surface-anchored.
+        props = tool.operator_properties("sculpt.paint_shape_draw")
+        region_is_header = context.region.type == 'TOOL_HEADER'
+        brush = None if settings is None else settings.brush
+        # Only the Line drag is always open; Polyline and Curve Patch can be closed and filled.
+        is_line, is_rect, _is_sized = paint_shape_tool_flags(context)
+        canvas_source = context.tool_settings.paint_mode.canvas_source
+        # Polygon/Star/Arc live sessions show the transform cage on demand (the Image Editor's
+        # equivalent is the shape session's Transform button).
+        is_transformable = paint_shape_is_transformable(context)
+        transform_active = bool(getattr(context.object, "paint_shape_transform_active", False))
+
+        if region_is_header:
+            # A flat horizontal row with separators: a column wraps the items of a tool header.
+            # Order: Draw Mode -> Projection -> colors -> Blend -> Width -> Strength -> Fill/Stroke
+            # -> Corner Radius -> Angle -> options popover.
+            row = layout.row(align=True)
+            row.prop(shape, "draw_mode", text="", expand=True)
+            layout.separator()
+            # Projection applies to Pixel mode only; Vector is always surface-anchored.
+            if shape.draw_mode == 'PIXEL':
+                layout.prop(props, "space", text="Projection")
+                layout.separator()
+            draw_shape_color_row(layout, shape, header=True)
+            layout.separator()
+            if brush is not None:
+                blend_row = layout.row(align=True)
+                blend_row.active = canvas_source not in {'MATERIAL', 'MATERIAL_PAINT'}
+                blend_row.prop(brush, "blend", text="")
+                layout.separator()
+            layout.prop(shape, "stroke_width", text="Width", slider=True)
+            layout.separator()
+            # Strength lives in the tool header only (Active Tool / Properties use the panel below).
+            _paint_shape_strength_prop(layout, context, brush, text="Strength", header=True)
+            if not is_line:
+                layout.separator()
+                row = layout.row(align=True)
+                row.prop(shape, "use_fill", text="Fill", toggle=True, icon='SNAP_FACE')
+                row.prop(shape, "use_stroke", text="Stroke", toggle=True, icon='SELECT_SET')
+                layout.separator()
+                layout.prop(shape, "stroke_align", text="")
+                # Corner shape of the stroke outline (Round / Bevel / Miter = sharp).
+                layout.prop(shape, "join_type", text="")
+            if is_rect:
+                # The radius rounds the stroke outline too, so it is not tied to Fill.
+                layout.separator()
+                layout.prop(shape, "corner_radius", index=0, text="Corner Radius")
+            layout.separator()
+            layout.prop(shape, "rotation", text="Angle")
+            if is_transformable:
+                layout.separator()
+                layout.operator("sculpt.paint_shape_transform_toggle",
+                                text="Transform", depress=transform_active)
+            layout.separator()
+            layout.popover(panel="VIEW3D_PT_tools_shape_options", text="Options")
+        else:
+            row = layout.row(align=True)
+            row.use_property_split = False
+            row.prop(shape, "draw_mode", text="", expand=True)
+            # Projection applies to Pixel mode only; Vector is always surface-anchored.
+            if shape.draw_mode == 'PIXEL':
+                layout.prop(props, "space", text="Projection")
+            draw_shape_color_row(layout, shape)
+            layout.prop(shape, "stroke_width", text="Width", slider=True)
+            if not is_line:
+                row = layout.row(align=True)
+                row.prop(shape, "use_fill", text="Fill", toggle=True, icon='SNAP_FACE')
+                row.prop(shape, "use_stroke", text="Stroke", toggle=True, icon='SELECT_SET')
+            layout.prop(shape, "rotation", text="Angle")
+            if is_transformable:
+                layout.operator("sculpt.paint_shape_transform_toggle",
+                                text="Transform", depress=transform_active)
+            draw_paint_shape_extra_options(context, layout, shape)
+
+        # The PBR channel toggles, exactly as the Color Gradient tool shows them for the same
+        # canvases (the shape tools write the same Sculpt paint channels).
+        if (not region_is_header and
+                settings is not None and
+                context.tool_settings.paint_mode.canvas_source in {'MATERIAL', 'MATERIAL_PAINT'}):
+            from bl_ui.properties_paint_common import draw_material_paint_channel_toggles
+            draw_material_paint_channel_toggles(
+                layout, settings.brush, settings,
+                show_custom=(context.tool_settings.paint_mode.canvas_source == 'MATERIAL_PAINT'),
+            )
+
+# R10.1: the Sculpt Mode tools come from the same base; the cursor is the only other difference.
+for _shape_tool_name, _shape_tool in _paint_shape_tools(
+        "3D View Tool: Sculpt",
+        _defs_sculpt_paint_shape.draw_shape_settings,
+        cursor='PAINT_CROSS').items():
+    setattr(_defs_sculpt_paint_shape, _shape_tool_name, _shape_tool)
+del _shape_tool_name, _shape_tool
+
+
 class _defs_weight_paint:
 
     @staticmethod
@@ -4838,6 +4943,18 @@ class VIEW3D_PT_tools_active(ToolSelectPanelHelper, Panel):
             _defs_sculpt.layer_eraser,
             _defs_sculpt.texture_fill,
             _defs_sculpt.color_gradient,
+            (
+                _defs_sculpt_paint_shape.rect,
+                _defs_sculpt_paint_shape.ellipse,
+                _defs_sculpt_paint_shape.polygon,
+                _defs_sculpt_paint_shape.star,
+                _defs_sculpt_paint_shape.arc,
+            ),
+            (
+                _defs_sculpt_paint_shape.line,
+                _defs_sculpt_paint_shape.polyline,
+                _defs_sculpt_paint_shape.curve,
+            ),
             None,
             _defs_transform.translate,
             _defs_transform.rotate,

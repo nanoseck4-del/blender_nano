@@ -84,6 +84,9 @@ struct VDMStampData {
   float4x4 symm_rot_mat_inv;
 };
 struct CurvePatchSession;
+namespace shape {
+struct PaintShapeSession;
+}
 }  // namespace ed::sculpt_paint
 struct GHash;
 struct GridPaintMask;
@@ -831,6 +834,14 @@ struct SculptSession : NonCopyable, NonMovable {
    * session was already discarded (pointer null).
    */
   void (*free_curve_patch_session)(Object &ob) = nullptr;
+
+  /**
+   * Live Vector shape session (Sculpt Mode, Image canvas). Owned here exactly like
+   * #curve_patch_session; the editor publishes it and registers #free_paint_shape_session so
+   * object deletion restores the preview and frees it.
+   */
+  ed::sculpt_paint::shape::PaintShapeSession *paint_shape_session = nullptr;
+  void (*free_paint_shape_session)(Object &ob) = nullptr;
 
   /* Cursor data and active vertex for tools */
   std::optional<int> active_face_index;

@@ -865,6 +865,8 @@ wmKeyMap *paint_shape_modal_keymap(wmKeyConfig *keyconf)
    * has drifted from Python on modifiers (see O34). */
 
   WM_modalkeymap_assign(keymap, "PAINT_OT_image_shape_draw");
+  /* The 3D Viewport frontend shares the map (same confirm, cancel and undo items). */
+  WM_modalkeymap_assign(keymap, "SCULPT_OT_paint_shape_draw");
 
   return keymap;
 }
@@ -885,6 +887,13 @@ static wmOperatorStatus shape_colors_swap_exec(bContext *C, wmOperator * /*op*/)
    * Editor edits that copy and must not touch the shared global block. */
   SpaceImage *sima = CTX_wm_space_image(C);
   PaintShapeSettings *shape_ptr = ED_image_shape_session_settings_get(sima);
+  if (shape_ptr == nullptr && CTX_wm_view3d(C) != nullptr) {
+    /* The Sculpt Mode Vector session owns a settings copy too (the shared block is not what its
+     * preview reads), so a swap from the 3D Viewport must edit that copy. */
+    if (Object *ob = CTX_data_active_object(C)) {
+      shape_ptr = ED_paint_shape_session_settings_get(*ob);
+    }
+  }
   if (shape_ptr == nullptr) {
     shape_ptr = &BKE_paint_shape_settings_get(*scene->toolsettings);
   }

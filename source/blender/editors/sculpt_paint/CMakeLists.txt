@@ -195,7 +195,15 @@ set(SRC
   mesh/sculpt_paint_color.cc
   mesh/sculpt_paint_image.cc
   mesh/sculpt_paint_material.cc
+  mesh/sculpt_paint_shape.cc
+  mesh/sculpt_paint_shape_attr.cc
+  mesh/sculpt_paint_shape_ops.cc
+  mesh/sculpt_paint_shape_pixels.cc
+  mesh/sculpt_paint_shape_sample.cc
+  mesh/paint_shape_vector_3d.cc
   mesh/paint_shape_gizmo.cc
+  mesh/paint_shape_gizmo_view3d.cc
+  mesh/paint_shape_image_3d.cc
   mesh/sculpt_pose.cc
   mesh/sculpt_project.cc
   mesh/sculpt_smooth.cc
@@ -290,6 +298,9 @@ set(SRC
   mesh/sculpt_islands.hh
   mesh/sculpt_multi_object.hh
   mesh/sculpt_paint_material.hh
+  mesh/sculpt_paint_shape.hh
+  mesh/sculpt_paint_shape_intern.hh
+  mesh/paint_shape_vector_3d.hh
   mesh/paint_shape_gizmo.hh
   mesh/sculpt_pose.hh
   mesh/sculpt_smooth.hh

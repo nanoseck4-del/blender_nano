@@ -3175,7 +3175,15 @@ def paint_shape_linked_3d_object(context):
     # An Image Editor with its own Vector session takes priority.
     if getattr(space, "paint_shape_session_settings", None) is not None:
         return None
-    return None
+    image = getattr(space, "image", None)
+    if image is None or image.source == 'TILED':
+        return None
+    ob = getattr(context, "object", None)
+    if ob is None:
+        return None
+    if not ob.paint_shape_session_shows_image(image):
+        return None
+    return ob
 
 
 def paint_shape_tool_flags(context):

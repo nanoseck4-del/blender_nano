@@ -2584,6 +2584,7 @@ void ED_operatortypes_paint()
   WM_operatortype_append(PAINT_OT_shape_colors_swap);
   WM_operatortype_append(PAINT_OT_image_shape_vector_apply);
   WM_operatortype_append(PAINT_OT_image_shape_vector_cancel);
+  WM_operatortype_append(PAINT_OT_image_shape_vector_undo);
   WM_operatortype_append(PAINT_OT_image_shape_transform_toggle);
   WM_operatortype_append(PAINT_OT_vector_save);
   WM_operatortype_append(PAINT_OT_vector_edit);
